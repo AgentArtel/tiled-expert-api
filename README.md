@@ -1,15 +1,24 @@
 # Tiled AI Expert Agent
 
-An AI-powered expert agent for the Tiled map editor, built using the `pydantic-ai` framework. This agent helps users with questions about Tiled's features, best practices, and technical implementation details.
+An AI-powered expert agent for the Tiled map editor, built using the `pydantic-ai` framework. This agent provides detailed, documented-based guidance about Tiled's features, best practices, and technical implementation details, with clear distinction between documented features and conceptual solutions.
 
 ## 🌟 Features
 
-- 🤖 AI-powered responses about Tiled's features and capabilities
-- 📚 Technical guidance on map creation and editing
-- ✨ Best practices for project organization
-- 🎮 Game engine integration assistance
-- ⚡ Performance optimization tips
+- 🤖 AI-powered responses with clear distinction between documented and conceptual content
+- 📚 RAG-enhanced responses using official Tiled documentation
+- ✨ Version-specific feature information and compatibility notes
+- 🎮 Game engine integration guidance with implementation examples
+- ⚡ Performance optimization recommendations
 - 🌐 Interactive web UI using Streamlit
+
+## 🎯 Response Quality
+
+The agent provides responses with:
+- Clear distinction between documented features and conceptual solutions
+- Version-specific information and compatibility notes
+- Implementation examples marked as either documented or conceptual
+- Explicit acknowledgment of documentation gaps
+- Comprehensive source references and related topics
 
 ## 🚀 Quick Start
 
@@ -45,6 +54,9 @@ Then edit `.env` with your credentials:
 OPENAI_API_KEY=your_openai_key
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_KEY=your_supabase_key
+LLM_MODEL=gpt-4-turbo-preview
+API_KEY=your_api_key
+PORT=8001
 ```
 
 ## 💻 Usage
@@ -56,126 +68,92 @@ streamlit run streamlit_app.py
 ```
 
 Features:
-- 💬 Interactive chat interface
-- 📖 Documentation resources
-- 🔍 Quick access to common topics
-- 📝 Chat history management
+- 💬 Interactive chat interface with documentation-aware responses
+- 📖 Access to official Tiled documentation
+- 🔍 Clear distinction between documented and conceptual solutions
+- 📝 Version-specific information and compatibility notes
 
-### Command Line Interface
-Run the agent in command line mode:
-```bash
-python tiled_ai_expert.py
-```
+### API Usage
 
-## 📚 Documentation
+The API provides detailed responses with clear distinction between documented features and conceptual solutions.
 
-The agent uses RAG (Retrieval Augmented Generation) to provide accurate answers based on Tiled's documentation. Topics covered include:
-
-- 🗺️ Map creation and editing
-- 🎨 Layer and tileset management
-- 🎯 Object placement and properties
-- 📤 Export formats and engine integration
-- 🤖 Automation and scripting
-- ⚡ Best practices and optimization
-
-## 🔌 API Usage
-
-### Endpoint
-
+#### Endpoint
 ```
 POST /api/v1/tiled/ask
 ```
 
-### Authentication
-
-The API uses Bearer token authentication. Include your API key in the Authorization header:
-
+#### Authentication
 ```
 Authorization: Bearer your_api_key
 ```
 
-### Request Format
+#### Example Queries and Responses
 
-```json
-{
-    "query": "How do I create a new tileset in Tiled?",
-    "user_id": "user123",
-    "conversation_id": "conv123"  // Optional
-}
+1. **Basic Feature Query**
+```bash
+curl -X POST "http://localhost:8001/api/v1/tiled/ask" \
+     -H "Authorization: Bearer your_api_key" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "query": "What is the latest version of Tiled and what are the system requirements?",
+         "user_id": "user123"
+     }'
 ```
 
-### Response Format
+2. **Technical Implementation Query**
+```bash
+curl -X POST "http://localhost:8001/api/v1/tiled/ask" \
+     -H "Authorization: Bearer your_api_key" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "query": "How can I implement a system for dynamic terrain modification in Tiled that affects the appearance of tiles during gameplay?",
+         "user_id": "user123"
+     }'
+```
 
+3. **Integration Query**
+```bash
+curl -X POST "http://localhost:8001/api/v1/tiled/ask" \
+     -H "Authorization: Bearer your_api_key" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "query": "How should I structure my Tiled project for a large RPG game with multiple maps and shared tilesets?",
+         "user_id": "user123"
+     }'
+```
+
+#### Response Format
+Responses are structured with clear sections:
 ```json
 {
     "success": true,
     "message": "Successfully processed query",
     "data": {
-        "response": "To create a new tileset in Tiled..."
+        "response": "# Main Topic\n\n[DOCUMENTED] Official feature information...\n\n[CONCEPTUAL] Suggested implementation...\n\n### Documentation Coverage\n- [DOCUMENTED]: List of documented features\n- [CONCEPTUAL]: List of suggested implementations\n- [UNCERTAIN]: Areas lacking documentation"
     }
 }
 ```
 
-### Error Response
-
-```json
-{
-    "success": false,
-    "message": "Error processing query: [error details]"
-}
-```
-
-### Example Usage
-
-Using curl:
-```bash
-curl -X POST "https://your-api-url/api/v1/tiled/ask" \
-     -H "Authorization: Bearer your_api_key" \
-     -H "Content-Type: application/json" \
-     -d '{
-         "query": "How do I create a new tileset in Tiled?",
-         "user_id": "user123",
-         "conversation_id": "conv123"
-     }'
-```
-
-Using Python:
-```python
-import requests
-
-url = "https://your-api-url/api/v1/tiled/ask"
-headers = {
-    "Authorization": "Bearer your_api_key",
-    "Content-Type": "application/json"
-}
-data = {
-    "query": "How do I create a new tileset in Tiled?",
-    "user_id": "user123",
-    "conversation_id": "conv123"
-}
-
-response = requests.post(url, json=data, headers=headers)
-print(response.json())
-```
-
 ## 🛠️ Development
-
-### Updating Documentation Database
-To refresh the documentation database:
-```bash
-python crawl_tiled_docs.py
-```
 
 ### Project Structure
 ```
 tiled-agent/
-├── streamlit_app.py      # Streamlit web interface
-├── tiled_ai_expert.py    # Core AI agent logic
-├── crawl_tiled_docs.py   # Documentation crawler
-├── requirements.txt      # Python dependencies
-├── .env.example         # Example environment variables
-└── README.md            # This file
+├── streamlit_app.py           # Streamlit web interface
+├── tiled_ai_expert.py         # Core AI agent with enhanced prompt
+├── tiled_ai_expert_endpoint.py # FastAPI endpoint
+├── crawl_tiled_docs.py        # Documentation crawler
+├── test_rag.py               # RAG system tests
+├── requirements.txt          # Python dependencies
+└── .env.example             # Example environment variables
 ```
+
+### Recent Updates
+- Enhanced system prompt for clearer documentation vs. conceptual content distinction
+- Improved version-specific information handling
+- Added explicit documentation coverage sections
+- Enhanced code example labeling ([DOCUMENTED] vs [CONCEPTUAL])
+- Improved uncertainty handling in responses
 
 ## 🚂 Deployment
 
@@ -186,14 +164,7 @@ tiled-agent/
 4. Add environment variables in Railway dashboard
 5. Deploy!
 
-### Local Deployment
-For local development or testing:
-```bash
-streamlit run streamlit_app.py
-```
-
-## 🐳 Docker Deployment
-
+### Docker Deployment
 1. Build the Docker image:
 ```bash
 docker build -t tiled-ai-expert .
@@ -209,21 +180,24 @@ docker run -p 8001:8001 \
   tiled-ai-expert
 ```
 
-## 🤝 Contributing
+## 📚 Documentation
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+The agent uses RAG (Retrieval Augmented Generation) to provide accurate answers based on Tiled's documentation. Topics covered include:
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- 🗺️ Map creation and editing
+- 🎨 Layer and tileset management
+- 🎯 Object placement and properties
+- 📤 Export formats and engine integration
+- 🤖 Automation and scripting
+- ⚡ Best practices and optimization
 
 ## 🙏 Acknowledgments
 
 - Built with [pydantic-ai](https://github.com/jxnl/pydantic-ai)
 - Powered by [OpenAI](https://openai.com)
 - Uses [Supabase](https://supabase.io) for data storage
-- UI built with [Streamlit](https://streamlit.io)
+- Documentation from [Tiled Map Editor](https://www.mapeditor.org/)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
