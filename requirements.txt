@@ -1,0 +1,16 @@
+fastapi>=0.109.0
+uvicorn>=0.27.0
+python-dotenv>=1.0.0
+supabase>=2.3.0
+openai>=1.6.1
+httpx>=0.24.0,<0.25.0
+pydantic>=2.10.0,<3.0.0
+python-multipart>=0.0.6
+beautifulsoup4>=4.12.2
+crawl4ai>=0.4.247
+tiktoken>=0.5.2
+logfire>=0.5.0
+streamlit>=1.24.0
+streamlit-chat>=0.1.1
+pydantic-ai>=0.0.19
+requests>=2.32.3
