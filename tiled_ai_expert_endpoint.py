@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 import os
+from datetime import datetime
 
 from tiled_ai_expert import tiled_ai_expert, TiledAIDeps
 
@@ -14,16 +15,29 @@ from tiled_ai_expert import tiled_ai_expert, TiledAIDeps
 load_dotenv()
 
 # Initialize FastAPI app
-app = FastAPI()
+app = FastAPI(
+    title="Tiled AI Expert API",
+    description="AI-powered expert agent for the Tiled map editor",
+    version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc"
+)
 security = HTTPBearer()
 
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Customize this in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health check endpoint for Railway
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Railway."""
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 # Supabase setup
 supabase: Client = create_client(
@@ -191,4 +205,5 @@ async def get_conversation_history(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    port = int(os.getenv("PORT", "8001"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
