@@ -13,3 +13,4 @@ logfire
 requests
 python-jose[cryptography]
 typing-extensions
+pydantic-ai==0.0.19
