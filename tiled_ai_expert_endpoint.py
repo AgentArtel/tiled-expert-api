@@ -51,7 +51,7 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Security(secu
         raise HTTPException(status_code=401, detail="Invalid authorization credentials")
     
     token = credentials.credentials
-    expected_token = os.getenv("API_KEY")
+    expected_token = os.getenv("API_BEARER_TOKEN")
     
     if not expected_token or token != expected_token:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -67,12 +67,42 @@ async def store_conversation(
 ):
     """Store conversation in Supabase."""
     try:
+        # Extract documentation coverage from response
+        coverage = {}
+        for line in response.split('\n'):
+            if line.strip().startswith('[DOCUMENTED]:'):
+                coverage['documented'] = line.replace('[DOCUMENTED]:', '').strip()
+            elif line.strip().startswith('[CONCEPTUAL]:'):
+                coverage['conceptual'] = line.replace('[CONCEPTUAL]:', '').strip()
+            elif line.strip().startswith('[UNCERTAIN]:'):
+                coverage['uncertain'] = line.replace('[UNCERTAIN]:', '').strip()
+
+        # Extract sources from response
+        sources = []
+        in_sources = False
+        for line in response.split('\n'):
+            if line.strip() == '### Sources':
+                in_sources = True
+            elif in_sources and line.strip().startswith('### '):
+                in_sources = False
+            elif in_sources and line.strip().startswith('- '):
+                sources.append(line.strip()[2:])
+
+        # Create metadata
+        metadata = metadata or {}
+        metadata.update({
+            'source': 'tiled_ai_expert',
+            'documentation_coverage': coverage,
+            'sources': sources,
+            'interaction_type': 'query_response'
+        })
+        
         data = {
             "user_id": user_id,
             "conversation_id": conversation_id,
             "query": query,
             "response": response,
-            "metadata": metadata or {}
+            "metadata": metadata
         }
         
         result = supabase.table("tiled_conversations").insert(data).execute()
@@ -128,6 +158,35 @@ async def tiled_ai_expert_endpoint(
         return AgentResponse(
             success=False,
             message=f"Error processing query: {str(e)}"
+        )
+
+@app.get("/api/v1/tiled/conversations/{conversation_id}", response_model=AgentResponse)
+async def get_conversation_history(
+    conversation_id: str,
+    authenticated: bool = Depends(verify_token)
+):
+    """
+    Get conversation history for a specific conversation ID.
+    """
+    try:
+        result = supabase.table("tiled_conversations").select("*").eq("conversation_id", conversation_id).execute()
+        
+        if not result.data:
+            return AgentResponse(
+                success=False,
+                message=f"No conversation found with ID: {conversation_id}"
+            )
+            
+        return AgentResponse(
+            success=True,
+            message="Successfully retrieved conversation history",
+            data={"history": result.data}
+        )
+        
+    except Exception as e:
+        return AgentResponse(
+            success=False,
+            message=f"Error retrieving conversation history: {str(e)}"
         )
 
 if __name__ == "__main__":

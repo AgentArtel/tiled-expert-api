@@ -51,12 +51,24 @@ cp .env.example .env
 ```
 Then edit `.env` with your credentials:
 ```
+# OpenAI Configuration
 OPENAI_API_KEY=your_openai_key
+LLM_MODEL=gpt-4-turbo-preview
+
+# Supabase Configuration (for conversation history)
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_KEY=your_supabase_key
-LLM_MODEL=gpt-4-turbo-preview
-API_KEY=your_api_key
+
+# API Configuration
+API_BEARER_TOKEN=your_api_key
 PORT=8001
+
+# Tiled Documentation Crawler Settings
+TILED_BASE_URL=https://doc.mapeditor.org/en/stable/
+MAX_CONCURRENT_REQUESTS=5
+CHUNK_SIZE=4000
+FOLLOW_LINKS=true
+MAX_DEPTH=3
 ```
 
 ## 💻 Usage
@@ -75,11 +87,18 @@ Features:
 
 ### API Usage
 
-The API provides detailed responses with clear distinction between documented features and conceptual solutions.
+The API provides detailed responses with clear distinction between documented features and conceptual solutions, along with conversation history tracking.
 
-#### Endpoint
+#### Endpoints
+
+1. **Ask Questions**
 ```
 POST /api/v1/tiled/ask
+```
+
+2. **Get Conversation History**
+```
+GET /api/v1/tiled/conversations/{conversation_id}
 ```
 
 #### Authentication
@@ -87,43 +106,46 @@ POST /api/v1/tiled/ask
 Authorization: Bearer your_api_key
 ```
 
-#### Example Queries and Responses
+#### Example Usage
 
-1. **Basic Feature Query**
+1. **Start a New Conversation**
 ```bash
+# Generate a conversation ID
+CONV_ID="conv_$(uuidgen)"
+
+# Make your first query
 curl -X POST "http://localhost:8001/api/v1/tiled/ask" \
      -H "Authorization: Bearer your_api_key" \
      -H "Content-Type: application/json" \
      -d '{
-         "query": "What is the latest version of Tiled and what are the system requirements?",
-         "user_id": "user123"
+         "query": "What is Tiled?",
+         "user_id": "user123",
+         "conversation_id": "'$CONV_ID'"
      }'
 ```
 
-2. **Technical Implementation Query**
+2. **Continue the Conversation**
 ```bash
+# Make subsequent queries with the same conversation ID
 curl -X POST "http://localhost:8001/api/v1/tiled/ask" \
      -H "Authorization: Bearer your_api_key" \
      -H "Content-Type: application/json" \
      -d '{
-         "query": "How can I implement a system for dynamic terrain modification in Tiled that affects the appearance of tiles during gameplay?",
-         "user_id": "user123"
+         "query": "How do I create a new map?",
+         "user_id": "user123",
+         "conversation_id": "'$CONV_ID'"
      }'
 ```
 
-3. **Integration Query**
+3. **View Conversation History**
 ```bash
-curl -X POST "http://localhost:8001/api/v1/tiled/ask" \
-     -H "Authorization: Bearer your_api_key" \
-     -H "Content-Type: application/json" \
-     -d '{
-         "query": "How should I structure my Tiled project for a large RPG game with multiple maps and shared tilesets?",
-         "user_id": "user123"
-     }'
+curl "http://localhost:8001/api/v1/tiled/conversations/$CONV_ID" \
+     -H "Authorization: Bearer your_api_key"
 ```
 
 #### Response Format
-Responses are structured with clear sections:
+
+1. **Ask Endpoint Response**
 ```json
 {
     "success": true,
@@ -134,6 +156,85 @@ Responses are structured with clear sections:
 }
 ```
 
+2. **Conversation History Response**
+```json
+{
+    "success": true,
+    "message": "Successfully retrieved conversation history",
+    "data": {
+        "history": [
+            {
+                "id": "uuid",
+                "user_id": "user123",
+                "conversation_id": "conv_xxx",
+                "query": "What is Tiled?",
+                "response": "...",
+                "metadata": {
+                    "source": "tiled_ai_expert",
+                    "documentation_coverage": {
+                        "documented": "Official features and APIs",
+                        "conceptual": "Implementation suggestions",
+                        "uncertain": "Undocumented features"
+                    },
+                    "sources": [
+                        "Tiled Documentation - Getting Started",
+                        "Tiled Documentation - Manual"
+                    ],
+                    "interaction_type": "query_response"
+                },
+                "created_at": "2025-01-21T00:00:00Z",
+                "updated_at": "2025-01-21T00:00:00Z"
+            }
+        ]
+    }
+}
+```
+
+#### Database Schema
+The conversation history is stored in a Supabase database with the following schema:
+```sql
+create table tiled_conversations (
+    id uuid default uuid_generate_v4() primary key,
+    user_id text not null,
+    conversation_id text not null,
+    query text not null,
+    response text not null,
+    metadata jsonb default '{}'::jsonb,
+    created_at timestamp with time zone default timezone('utc'::text, now()),
+    updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+```
+
+### Features of Conversation History
+- 🔄 Persistent conversation tracking
+- 📝 Complete query and response history
+- 🕒 Timestamps for all interactions
+- 📊 Rich metadata storage:
+  - 🎯 Source of response (e.g., tiled_ai_expert)
+  - 📚 Documentation coverage analysis
+  - 📖 Referenced documentation sources
+  - 🔍 Interaction type classification
+- 🏷️ Extensible metadata structure for analytics
+- 🔍 Fast retrieval by conversation ID
+
+### Metadata Structure
+The metadata field captures rich information about each interaction:
+
+1. **Source** (`source`): Identifies the AI model or component that generated the response
+2. **Documentation Coverage** (`documentation_coverage`):
+   - `documented`: Features with official documentation
+   - `conceptual`: Implementation suggestions and best practices
+   - `uncertain`: Areas with limited or no documentation
+3. **Sources** (`sources`): List of documentation pages referenced
+4. **Interaction Type** (`interaction_type`): Classification of the interaction (e.g., query_response)
+
+This metadata enables:
+- 📈 Response quality analysis
+- 📊 Documentation coverage tracking
+- 🎯 Source attribution
+- 🔍 Enhanced search and filtering
+- 📱 Integration with analytics tools
+
 ## 🛠️ Development
 
 ### Project Structure
@@ -141,14 +242,16 @@ Responses are structured with clear sections:
 tiled-agent/
 ├── streamlit_app.py           # Streamlit web interface
 ├── tiled_ai_expert.py         # Core AI agent with enhanced prompt
-├── tiled_ai_expert_endpoint.py # FastAPI endpoint
+├── tiled_ai_expert_endpoint.py # FastAPI endpoint with conversation history
 ├── crawl_tiled_docs.py        # Documentation crawler
 ├── test_rag.py               # RAG system tests
+├── tiled_conversations.sql    # Database schema for conversation history
 ├── requirements.txt          # Python dependencies
 └── .env.example             # Example environment variables
 ```
 
 ### Recent Updates
+- Added conversation history tracking with Supabase integration
 - Enhanced system prompt for clearer documentation vs. conceptual content distinction
 - Improved version-specific information handling
 - Added explicit documentation coverage sections
