@@ -21,9 +21,15 @@ wheels/
 *.egg
 
 # Environment
-
+.env
+.env.*
+!.env.example
 
 # Virtual Environment
+venv/
+env/
+ENV/
+.venv/
 
 # IDE
 .vscode/
@@ -33,7 +39,17 @@ wheels/
 
 # Logs
 *.log
+server.log
+
+# Server
+server.pid
+*.pid
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Railway
+.railway/
+railway.json
+railway.toml
