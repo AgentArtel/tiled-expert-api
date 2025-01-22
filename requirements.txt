@@ -1,15 +1,15 @@
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-python-dotenv==1.0.0
-supabase==2.3.3
-openai==1.6.1
-httpx==0.25.2
-pydantic==2.10.1
-python-multipart==0.0.6
-beautifulsoup4==4.12.2
-crawl4ai==0.4.247
-tiktoken==0.5.2
-logfire==3.2.0
-requests==2.31.0
-python-jose[cryptography]==3.3.0  # For JWT handling
-typing-extensions>=4.8.0  # For Python 3.8+ compatibility
+fastapi
+uvicorn[standard]
+python-dotenv
+supabase
+openai
+httpx
+pydantic
+python-multipart
+beautifulsoup4
+crawl4ai
+tiktoken
+logfire
+requests
+python-jose[cryptography]
+typing-extensions
